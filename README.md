@@ -39,7 +39,8 @@ is in the top left of the editor if you want to test debug.log type stuff.
 If there's something I've left out of here and you guys want some clarification, let me know
 and I'll update this Readme.
 
-Keep looking at this Readme, because if there's any new developments, probably how to connect assets
-to specific classes, which I will, I'll probably put it in here.
+Keep looking at this Readme as well as the crash course txt I made, because if there's any 
+new developments, probably how to connect assets to specific classes, which I will, I'll 
+probably put it in either of these 2.
 
 Good luck guys.
