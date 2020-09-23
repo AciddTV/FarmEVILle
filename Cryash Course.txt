@@ -1,0 +1,206 @@
+[CryEngine Startup Tutorial]
+
+The version of CryEngine I'm working with is version 5.6.7, just so you know.
+
+So how CryEngine works is in the code you have to declare an "Entity", which is basically like an asset in Unity.
+
+How you declare an asset is you will get a base code looking like this:
+
+__________________________________________________________________________________
+
+namespace CryEngine.Game{
+
+	[EntityComponent(Guid="88f0f916-3753-73b6-24f2-adb3e69fac37")]
+	public class firstscript : EntityComponent
+	{
+		protected override void OnGameplayStart()
+		{
+		
+		}
+		
+		protected override void OnUpdate(float frameTime)
+		{
+		
+		}
+	}
+}
+
+
+__________________________________________________________________________________
+
+The very important part of the code is the public class and [EntityComponent] statements above it.
+
+When working with creating entities in CryEngine, you have to declare which class that entity is going
+to derive from in the code.
+
+So in the case above, it's saying [EntityComponent] with Guid (unique code given to individual entity),
+will be deriven from public class firstscript.
+
+The EntityComponent next to the firstscript (public class firstscript : EntityComponent) is basically
+saying the same thing.
+
+So in the code that I'll probably share, it'll have another example that looks like this.
+
+__________________________________________________________________________________
+
+	[EntityComponent(Guid="C4F2C774-CE16-428F-AF56-AC38AF52DB89")]	//I'll explain the guid thing in a bit
+	public class FarmhouseA : EntityComponent{
+		protected override void OnGameplayStart(){
+			base.OnGameplayStart();
+		}
+		protected override void OnUpdate(float frameTime){
+			base.OnUpdate(frameTime);
+		}
+	}
+	
+__________________________________________________________________________________
+
+This is how you could create a "FarmhouseA" entity or asset in CryEngine so that it comes up in
+the editor for the designers to work with.
+
+2 things that you can understand when moving from Unity to CryEngine:
+
+	protected override void OnGameplayStart(){
+	
+	}
+
+is basically 
+	
+	void Start(){
+	
+	}
+	
+and 
+	
+	protected override void OnUpdate(frameTime){
+	
+	}
+	
+is basically 
+	
+	void Update(){
+
+	}
+
+__________________________________________________________________________________
+
+The Guid thing: that's basically giving the entity a unique value. There's an easy way
+to get one from Visual Studio, just go to the tools bar -> Create GUID -> click the 
+4th option (Registry Format) -> New Guid -> Copy and then paste it and then you're done.
+
+it is ABSOLUTELY IMPERITIVE that they are all different per Entity
+__________________________________________________________________________________
+
+You're basically only going to have 1 class through the whole thing, no more 
+*this script for movement*
+*this script for camera*
+*this script for farmA* etc.
+
+Everything is going to be controlled from 1 single script: GameScript.
+
+Although if need be, multiple can be used.
+
+The thing about working like this with entities in CryEngine, is the fact that each
+and every asset must be coded if it's going to be manipulated.
+
+Meaning you can't have 2 assets both deriving from FarmhouseA, otherwise both will be
+affected in the same way.
+
+In the example code I have said that if the player presses E, the value of spawnRate will
+go up, if 2 entities are attached to the FarmhouseA entity, both of their values will go up.
+
+We can circumvent this though by just making it so that the player only has 1 of each facility.
+
+Another quick little difference I noticed though (I'm going to try and put as many as those in here as I can):
+
+To check for input (checking if the player presses A, for example) looks like this in CryEngine
+__________________________________________________________________________________
+
+	if(CryEngine.Input.KeyDown(KeyId.A)){
+		spawnRate++;
+	}
+
+__________________________________________________________________________________
+
+	Debug.Log (from Unity) is now Log.Info();
+__________________________________________________________________________________
+
+Having 2 classes communicate with each other is something we very clearly took for granted in Unity.
+
+I am going to be referring to 2 different classes entirely, one is called FarmhouseA, the other is
+an overseer class I've made to keep track of communication.
+__________________________________________________________________________________
+[Overseer.cs]
+
+public class Overseer
+{
+	private readonly FarmhouseA _fhA;
+	
+	public Overseer(FarmhouseA fha)
+	{
+		if(fha == null)
+		{
+			throw new ArgumentNullException(nameof(fha));
+		}
+		_fhA = fha;
+	}
+	
+	public void UpdateView(float frameTime)
+	{
+		**whatever you want this class to actually do**
+	}
+}
+
+This part is absolutely critical as this is how the object is initialized, and everything this class
+can do. You're essentially just going to call this in the classes it's needed.
+
+__________________________________________________________________________________
+[FarmhouseA.cs]
+
+private Overseer _overseer;
+
+protected override void OnInitialize()
+{
+	base.OnInitialize();
+	
+	Initialize();
+}
+
+private void Initialize()
+{
+	_overseer = new Overseer(this);
+}
+__________________________________________________________________________________
+
+This is a lot less complicated than it looks. This is moreso skeleton code to put in than
+something you actually need to understand.
+
+Once this is done, you call the object you initialized and can access any of the functions
+in there. like this:
+
+protected override void OnUpdate(float frameTime)
+{
+	_overseer.UpdateView(frameTime);
+}
+
+Remember this protected override void onupdate is like saying void update();
+You could also just do it in the start method if you wanted.
+__________________________________________________________________________________
+
+Looking over this, I may reverse the code that I have to fit the overseer as the main, but I'll let
+you know.
+
+
+
+
+
+
+	
+I'll build onto this as we go along and if I find something that's helpful, like
+the keydown thing.
+
+
+	
+	
+	
+	
