@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -6,14 +6,16 @@ using System.Threading.Tasks;
 using CryEngine.UI;
 using CryEngine.UI.Components;
 using CryEngine.Rendering;
+using CryEngine.FileSystem;
 
 namespace CryEngine.Projects.Game
 {
     [EntityComponent(Guid= "AE126E56-8DA4-40D9-9F4C-8AD3D0952E7E")]
-    class FarmhouseA : EntityComponent
+    public class FarmhouseA : EntityComponent
     {
         private Canvas _canvas;
         private Text text;
+        private FarmhouseA _farmhouse;
 
         private float _mass = 90f;
 
@@ -28,6 +30,7 @@ namespace CryEngine.Projects.Game
         [EntityProperty]
         public float _prodTemp { get; set; }
         public float _i { get; set; }
+        public int mult { get; set; }
 
         [EntityProperty]
         public float Mass
@@ -42,6 +45,16 @@ namespace CryEngine.Projects.Game
                 setBuilding();
             }
         }
+
+        [EntityProperty]
+        public string _level { get; set; }
+
+        [EntityProperty]
+        public bool _boosted { get; set; }
+
+        public enum _Levels { Level1, Level2, Level3 };
+
+        private Overseer _overseer;
         //void start()
         protected override void OnGameplayStart()
         {
@@ -50,22 +63,42 @@ namespace CryEngine.Projects.Game
             Mouse.ShowCursor();
             _prodTemp = 150;
             _i = 0;
+            _boosted = true;
+            mult = 1;
         }
-        //void Update()
-        protected override void OnUpdate(float frameTime)
-        {
-            production(_productionRate, _prodTemp);
+        
 
+        protected override void OnInitialize()
+        {
+            base.OnInitialize();
+
+            Initialize();
+        }
+
+        private void Initialize()
+        {
+            _overseer = new Overseer(this);
         }
 
         //automated production. WIP - integrating upgrades and boosting systems.Amount is currently controlled in the editor.
 
         private void production(float rate, float prodtemp)
         {
+            switch(_level) {
+                case "Level1":
+                    mult = 1;
+                    break;
+                case "Level2":
+                    mult = 3;
+                    break;
+                case "Level3":
+                    mult = 9;
+                    break;
+            }
             
             if(_i == prodtemp)
             {
-                _amount += rate;
+                _amount += rate * mult;
                 Log.Info(_amount.ToString());
                 _i = 0;
             }
@@ -74,7 +107,10 @@ namespace CryEngine.Projects.Game
                 _i++;
             }
         }
-
+        private void createOBJ()
+        {
+            _farmhouse.Entity.AddComponent<FarmhouseA>();
+        }
         //UI Creation
         private void createUI()
         {
@@ -118,6 +154,7 @@ namespace CryEngine.Projects.Game
         {
             Log.Info("FarmhouseA current produce is " + _amount.ToString());
             text.Content = "FarmhouseA current produce is " + _amount.ToString();
+            _boosted = false;
         }
 
         //WIP
@@ -141,26 +178,13 @@ namespace CryEngine.Projects.Game
             PhysicsEntity.Physicalize(Mass, PhysicalizationType.Rigid);
         }
 
-    }
-
-    
-
-    [EntityComponent(Guid= "AC8BB444-B598-42AD-9188-68385E3663DD")]
-    class FarmhouseB : EntityComponent {
-        [EntityProperty]
-        public float _productionRate { get; set; }
-
-        [EntityProperty]
-        public float _buildingCost { get; set; }
-
-        protected override void OnGameplayStart()
-        {
-            base.OnGameplayStart();
-        }
-
+        //void Update()
         protected override void OnUpdate(float frameTime)
         {
-            base.OnUpdate(frameTime);
+            production(_productionRate, _prodTemp);
+
+            _overseer.UpdateView(frameTime);
         }
+
     }
 }
