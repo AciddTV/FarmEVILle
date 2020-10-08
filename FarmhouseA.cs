@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -7,6 +7,7 @@ using CryEngine.UI;
 using CryEngine.UI.Components;
 using CryEngine.Rendering;
 using CryEngine.FileSystem;
+using CryEngine.Resources;
 
 namespace CryEngine.Projects.Game
 {
@@ -15,7 +16,10 @@ namespace CryEngine.Projects.Game
     {
         private Canvas _canvas;
         private Text text;
+        private Text clickableText;
         private FarmhouseA _farmhouse;
+        private cowpen _cowpen;
+        private ViewCamera _cam;
 
         private float _mass = 90f;
 
@@ -52,9 +56,10 @@ namespace CryEngine.Projects.Game
         [EntityProperty]
         public bool _boosted { get; set; }
 
-        public enum _Levels { Level1, Level2, Level3 };
+        public enum _Levels { Level1, Level2, Level3 };     //Stuff like this is just giving the farmhouse entity it's own properties to work with
 
         private Overseer _overseer;
+        private TimeKeeper _timeKeeper;                     //This right here is how we keep the program from crashing, because we need to initialize everything first
         //void start()
         protected override void OnGameplayStart()
         {
@@ -65,7 +70,7 @@ namespace CryEngine.Projects.Game
             _i = 0;
             _boosted = true;
             mult = 1;
-        }
+        }                                               //essentially our version of void Start()
         
 
         protected override void OnInitialize()
@@ -78,7 +83,11 @@ namespace CryEngine.Projects.Game
         private void Initialize()
         {
             _overseer = new Overseer(this);
-        }
+            _timeKeeper = new TimeKeeper();
+            _timeKeeper.initTimeKeeper();
+            _cowpen = new cowpen();
+            _cam = new ViewCamera();
+        }                                               //this here is the important thing that keeps us from crashing, as everything is initialized from the second we start the game
 
         //automated production. WIP - integrating upgrades and boosting systems.Amount is currently controlled in the editor.
 
@@ -94,7 +103,7 @@ namespace CryEngine.Projects.Game
                 case "Level3":
                     mult = 9;
                     break;
-            }
+            }                                           //The upgrade system that's still a work in progress
             
             if(_i == prodtemp)
             {
@@ -107,12 +116,12 @@ namespace CryEngine.Projects.Game
                 _i++;
             }
         }
-        private void createOBJ()
+        private void createOBJ()                    //This is basically kinda what I want Mitch to do, it's a bit of like adding components but what I want him to do is specifically add Mesh on runtime
         {
             _farmhouse.Entity.AddComponent<FarmhouseA>();
         }
         //UI Creation
-        private void createUI()
+        private void createUI()                     //Right here is the UI, obviously you'll see that in the full game, The UI isn't fully finished, right now we've got a button and I'm working through placements but it's coming along nicely
         {
             _canvas = SceneObject.Instantiate<Canvas>(null);
 
@@ -121,6 +130,12 @@ namespace CryEngine.Projects.Game
             text.Height = 24;
             //text.Content = "Basic UI example";
             text.Offset = new Point(0f, 120f);
+
+            var pnl = SceneObject.Instantiate<Panel>(_canvas);
+
+            clickableText = _canvas.AddComponent<Text>();
+            clickableText.Height = 15;
+            
 
             //Create a button that shows the total amount of produce that's been gained so far. Gaining produce is automatic.
 
@@ -148,8 +163,43 @@ namespace CryEngine.Projects.Game
             btnLeft.Ctrl.Text.Alignment = Alignment.Center;
 
             btnLeft.Ctrl.OnPressed += OnLeftBtnPressed;
+
+            var btnAddCow = SceneObject.Instantiate<Button>(_canvas);
+            btnAddCow.RectTransform.Alignment = Alignment.Center;
+            btnAddCow.RectTransform.Padding = new Padding(200f, 150f);
+            btnAddCow.RectTransform.Size = new Point(238.5f, 57.5f);
+            btnAddCow.Background.Source = ResourceManager.ImageFromFile("Assets/UI/cowfactory.png", false);
+            btnAddCow.Background.SliceType = SliceType.None;
+
+            btnAddCow.Ctrl.OnPressed += addpen; 
+
+           
+        }
+        private void addpen()
+        {
+            try
+            {
+                Vector3 nvec = new Vector3(521f, 518f, 32f);
+                Entity.SpawnWithComponent<cowpen>("added", nvec, Quaternion.Identity, 1.0f);
+                _cowpen.Entity.LoadGeometry(0, Primitives.Sphere);
+                //Log.Info("object should be at " + _cowpen.Entity.Position.X.ToString() + " " + _cowpen.Entity.Position.Y.ToString() + " " + _cowpen.Entity.Position.Z.ToString());
+            } catch
+            {
+                Log.Info("cfg not found by cryengine");
+            }
         }
 
+        private void mouselocale()
+        {
+            
+        }
+
+        private void OnCowAdd()                         //This here is very important, this spawns a new farmentity, and I'll walk you through what's happening when we get there in the actual engine
+        {
+            Log.Info("Cowhouse has been added");
+            Entity.SpawnWithComponent<FarmhouseA>("FarmhouseA", Vector3.Zero, Quaternion.Identity, 1);
+
+        }
         private void OnUIbtnPressed()
         {
             Log.Info("FarmhouseA current produce is " + _amount.ToString());
@@ -160,12 +210,14 @@ namespace CryEngine.Projects.Game
         //WIP
         private void OnLeftBtnPressed()
         {
+            
+
             Vector3 t = Vector3.Left;
             Log.Info("Camera to the left");
         }
 
         //Gives the farmhouseA object an actual shape, and also assigns physics to that object
-        private void setBuilding()
+        private void setBuilding()                              //This here is the thing that gives the farmhouse building that pyramid shape.
         {
             var entity = Entity;
             entity.LoadGeometry(0, Primitives.Pyramid);
@@ -178,13 +230,101 @@ namespace CryEngine.Projects.Game
             PhysicsEntity.Physicalize(Mass, PhysicalizationType.Rigid);
         }
 
-        //void Update()
-        protected override void OnUpdate(float frameTime)
+        //void Update() 
+        protected override void OnUpdate(float frameTime)           //essentially our version of void Update()
         {
             production(_productionRate, _prodTemp);
 
             _overseer.UpdateView(frameTime);
+            _timeKeeper.startTimeKeeper(frameTime);
+
+            if (Mouse.LeftDown)
+            {
+                Log.Info(Mouse.CursorPosition.X.ToString() + " " + Mouse.CursorPosition.Y.ToString());
+            }
+            if(Mouse.HitEntity != null)
+            {
+                Log.Info(Mouse.HitEntityId.ToString());
+            }
+        }
+
+        private void checkforassets()
+        {
+
         }
 
     }
+
+    [EntityComponent(Category = "Camera", Guid = "53D8FD0A-BA7D-4D1C-810F-4D5738C05736")]
+    public class ViewCamera : EntityComponent
+    {
+        [SerializeValue]
+        public static ViewCamera ActiveCamera { get; private set; }
+
+        [SerializeValue]
+        private View _view;
+        [SerializeValue]
+        private bool _active;
+
+        [EntityProperty(EntityPropertyType.Primitive, "Defines if this is the currently active camera")]
+        public bool Active {
+            get { return _active; }
+            set
+            {
+                if (value)
+                {
+                    if(ActiveCamera != null)
+                    {
+                        ActiveCamera._active = false;
+                        ActiveCamera._view.SetActive(false);
+                    }
+                    _active = true;
+                    if(_view == null)
+                    {
+                        _view = View.Create();
+                    }
+                    _view.SetActive(true);
+                    ActiveCamera = this;
+                }
+                else
+                {
+                    if(ActiveCamera == this)
+                    {
+                        ActiveCamera = null;
+                    }
+                    _active = false;
+                    if(_view != null)
+                    {
+                        _view.SetActive(false);
+                    }
+                }
+            }
+        }
+
+        protected override void OnInitialize()
+        {
+            base.OnInitialize();
+            if(_view == null)
+            {
+                _view = View.Create();
+            }
+            _view.LinkTo(Entity);
+
+            if(_active || ActiveCamera == null)
+            {
+                Active = true;
+            }
+        }
+
+        protected override void OnUpdate(float frameTime)
+        {
+            base.OnUpdate(frameTime);
+
+            if (_active)
+            {
+                _view.Update(frameTime, _active);
+            }
+        }
+    }
+
 }
