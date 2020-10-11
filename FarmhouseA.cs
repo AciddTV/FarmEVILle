@@ -19,6 +19,7 @@ namespace CryEngine.Projects.Game
         private Text clickableText;
         private FarmhouseA _farmhouse;
         private cowpen _cowpen;
+        private cow _cow;
         private ViewCamera _cam;
 
         private float _mass = 90f;
@@ -87,6 +88,7 @@ namespace CryEngine.Projects.Game
             _timeKeeper.initTimeKeeper();
             _cowpen = new cowpen();
             _cam = new ViewCamera();
+            _cow = new cow();
         }                                               //this here is the important thing that keeps us from crashing, as everything is initialized from the second we start the game
 
         //automated production. WIP - integrating upgrades and boosting systems.Amount is currently controlled in the editor.
@@ -175,18 +177,35 @@ namespace CryEngine.Projects.Game
             btnAddCow.BackgroundImageInvertedUrl = "Assets/UI/cowfactory.png";
 
             var btnAddCowUnit = SceneObject.Instantiate<Button>(_canvas);
-            btnAddCowUnit.RectTransform.Alignment = Alignment.BottomLeft;
-            btnAddCowUnit.RectTransform.Size = new Point(30f, 30f);
+            btnAddCowUnit.RectTransform.Alignment = Alignment.Center;
+            btnAddCowUnit.RectTransform.Size = new Point(238.5f, 57.5f);
+
+            btnAddCowUnit.RectTransform.Padding = new Padding(200f, 200f);
+
             btnAddCowUnit.Ctrl.Text.Content = "Add Cow";
 
-           
+            btnAddCowUnit.Ctrl.OnPressed += addcow;            
         }
+        private void addcow()
+        {
+            try
+            {
+                Vector3 nvec = new Vector3(521f, 518f, 33f);
+                Entity.SpawnWithComponent<cow>("cow", nvec, Quaternion.Identity, 1.0f);
+                _cow.Entity.LoadGeometry(0, Primitives.Sphere);
+            }
+            catch
+            {
+                Log.Info("No cows can be found");
+            }
+        }
+
         private void addpen()
         {
             string cowpenlocale = "Assets/objects/CowPen.cgf";
             try
             {
-                Vector3 nvec = new Vector3(521f, 518f, 32f);
+                Vector3 nvec = new Vector3(500f, 518f, 32f);
                 Entity.SpawnWithComponent<cowpen>("added", nvec, Quaternion.Identity, 1.0f);
                 _cowpen.Entity.LoadGeometry(0, cowpenlocale);
             } catch
@@ -334,4 +353,42 @@ namespace CryEngine.Projects.Game
         }
     }
 
+    [EntityComponent(Guid= "77FA7601-AAE6-4C4A-98FA-392EAC2850DD")]
+    public class cow : EntityComponent
+    {
+        public int _amount;
+        private float _mass = 90.0f;
+        public float Mass
+        {
+            get
+            {
+                return _mass;
+            }
+            set
+            {
+                _mass = value;
+                setCow();
+            }
+        }
+
+        public void setCow()
+        {
+            var entity = Entity;
+            entity.LoadGeometry(0, Primitives.Sphere);
+
+            var PhysicsEntity = Entity.Physics;
+            if(PhysicsEntity == null)
+            {
+                return;
+            }
+            PhysicsEntity.Physicalize(Mass, PhysicalizationType.Rigid);
+        }
+        protected override void OnGameplayStart()
+        {
+            base.OnGameplayStart();
+
+            setCow();
+        }
+
+    }
 }
