@@ -171,22 +171,29 @@ namespace CryEngine.Projects.Game
             btnAddCow.Background.Source = ResourceManager.ImageFromFile("Assets/UI/cowfactory.png", false);
             btnAddCow.Background.SliceType = SliceType.None;
 
-            btnAddCow.Ctrl.OnPressed += addpen; 
+            btnAddCow.Ctrl.OnPressed += addpen;
+            btnAddCow.BackgroundImageInvertedUrl = "Assets/UI/cowfactory.png";
+
+            var btnAddCowUnit = SceneObject.Instantiate<Button>(_canvas);
+            btnAddCowUnit.RectTransform.Alignment = Alignment.BottomLeft;
+            btnAddCowUnit.RectTransform.Size = new Point(30f, 30f);
+            btnAddCowUnit.Ctrl.Text.Content = "Add Cow";
 
            
         }
         private void addpen()
         {
+            string cowpenlocale = "Assets/objects/CowPen.cgf";
             try
             {
                 Vector3 nvec = new Vector3(521f, 518f, 32f);
                 Entity.SpawnWithComponent<cowpen>("added", nvec, Quaternion.Identity, 1.0f);
-                _cowpen.Entity.LoadGeometry(0, Primitives.Sphere);
-                //Log.Info("object should be at " + _cowpen.Entity.Position.X.ToString() + " " + _cowpen.Entity.Position.Y.ToString() + " " + _cowpen.Entity.Position.Z.ToString());
+                _cowpen.Entity.LoadGeometry(0, cowpenlocale);
             } catch
             {
-                Log.Info("cfg not found by cryengine");
+                Log.Info("cgf not found by cryengine");
             }
+            
         }
 
         private void mouselocale()
@@ -242,9 +249,9 @@ namespace CryEngine.Projects.Game
             {
                 Log.Info(Mouse.CursorPosition.X.ToString() + " " + Mouse.CursorPosition.Y.ToString());
             }
-            if(Mouse.HitEntity != null)
+            if((Mouse.HitEntity != null) && (Mouse.LeftUp == true))
             {
-                Log.Info(Mouse.HitEntityId.ToString());
+                Log.Info(Mouse.HitEntityId.ToString() + " has been clicked");
             }
         }
 

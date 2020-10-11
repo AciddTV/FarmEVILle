@@ -10,8 +10,10 @@ namespace CryEngine.Projects.Game
     [EntityComponent(Guid= "0D6611D0-A7D6-4460-ACC5-700119864DA2")] //in cowpen.cs, we have essentially the cowpen, the shape, the building, the entity and loadfunctions, everything that will give us a space to put the cows in.
     class cowpen : EntityComponent
     {
-        
-        public const string cowpengeom = "Assets/objects/CowPen.cfg";
+        [EntityProperty]
+        public float _cost { get; set; }
+
+        public const string cowpengeom = "Assets/objects/CowPen.cgf";
         private float _mass = 90.0f;
         public float Mass
         {
@@ -29,7 +31,8 @@ namespace CryEngine.Projects.Game
         {
             var entity = Entity;
             //entity.LoadCharacter(0, cowpengeom);
-            entity.LoadGeometry(0, Primitives.Sphere);
+            //entity.LoadGeometry(0, Primitives.Sphere);
+            entity.LoadGeometry(0, cowpengeom);
 
             var physicsEntity = Entity.Physics;
             if(physicsEntity == null)
